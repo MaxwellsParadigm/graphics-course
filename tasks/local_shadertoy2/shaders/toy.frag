@@ -11,6 +11,7 @@ layout(push_constant) uniform PushConstants
 {
   float iTime;
   vec2 iResolution;
+  vec2 mouse_pos;
 }
 params;
 
