@@ -86,8 +86,8 @@ App::App()
     .extent = vk::Extent3D{resolution.x, resolution.y, 1},
     .name = "texture",
     .format = vk::Format::eB8G8R8A8Srgb,
-    .imageUsage = vk::ImageUsageFlagBits::eColorAttachment |
-      vk::ImageUsageFlagBits::eSampled | vk::ImageUsageFlagBits::eColorAttachment,
+    .imageUsage = vk::ImageUsageFlagBits::eColorAttachment | vk::ImageUsageFlagBits::eSampled |
+      vk::ImageUsageFlagBits::eColorAttachment,
   });
 
 
@@ -95,8 +95,7 @@ App::App()
 
   etna::create_program(
     "local_shadertoy2",
-    {LOCAL_SHADERTOY2_SHADERS_ROOT "toy.frag.spv",
-     LOCAL_SHADERTOY2_SHADERS_ROOT "toy.vert.spv"});
+    {LOCAL_SHADERTOY_2_SHADERS_ROOT "toy.frag.spv", LOCAL_SHADERTOY_2_SHADERS_ROOT "toy.vert.spv"});
   graphicsPipeline = etna::get_context().getPipelineManager().createGraphicsPipeline(
     "local_shadertoy2",
     etna::GraphicsPipeline::CreateInfo{
@@ -104,8 +103,8 @@ App::App()
 
   etna::create_program(
     "texture",
-    {LOCAL_SHADERTOY2_SHADERS_ROOT "texture.frag.spv",
-     LOCAL_SHADERTOY2_SHADERS_ROOT "toy.vert.spv"});
+    {LOCAL_SHADERTOY_2_SHADERS_ROOT "texture.frag.spv",
+     LOCAL_SHADERTOY_2_SHADERS_ROOT "toy.vert.spv"});
   texturePipeline = etna::get_context().getPipelineManager().createGraphicsPipeline(
     "texture",
     etna::GraphicsPipeline::CreateInfo{
@@ -113,38 +112,30 @@ App::App()
 
 
   mouse_pos = glm::vec2(resolution / 2u);
-  
+
   {
     int height, width, channels;
     unsigned char* textureData = stbi_load(
-      GRAPHICS_COURSE_RESOURCES_ROOT "/textures/test_tex_1.png",
-      &width,
-      &height,
-      &channels,
-      4);
+      GRAPHICS_COURSE_RESOURCES_ROOT "/textures/test_tex_1.png", &width, &height, &channels, 4);
     assert(textureData != nullptr);
 
     loadedTextureImage1 = etna::get_context().createImage({
       .extent = vk::Extent3D{(uint32_t)width, (uint32_t)height, 1},
       .name = "loaded_texture",
       .format = vk::Format::eR8G8B8A8Srgb,
-      .imageUsage =
-        vk::ImageUsageFlagBits::eTransferDst | vk::ImageUsageFlagBits::eSampled,
+      .imageUsage = vk::ImageUsageFlagBits::eTransferDst | vk::ImageUsageFlagBits::eSampled,
     });
 
-    etna::BlockingTransferHelper transferHelper(
-      {.stagingSize = VkDeviceSize(width * height * 4)});
+    etna::BlockingTransferHelper transferHelper({.stagingSize = VkDeviceSize(width * height * 4)});
 
-    std::unique_ptr<etna::OneShotCmdMgr> oneShotCmdMgr =
-      etna::get_context().createOneShotCmdMgr();
+    std::unique_ptr<etna::OneShotCmdMgr> oneShotCmdMgr = etna::get_context().createOneShotCmdMgr();
 
     transferHelper.uploadImage(
       *oneShotCmdMgr,
       loadedTextureImage1,
       0,
       0,
-      std::span<std::byte>(
-        reinterpret_cast<std::byte*>(textureData), width * height * 4));
+      std::span<std::byte>(reinterpret_cast<std::byte*>(textureData), width * height * 4));
 
     stbi_image_free(textureData);
   }
@@ -152,15 +143,10 @@ App::App()
   {
     int height, width, channels;
     unsigned char* textureData = stbi_load(
-      GRAPHICS_COURSE_RESOURCES_ROOT "/textures/texture1.bmp",
-      &width,
-      &height,
-      &channels,
-      4);
+      GRAPHICS_COURSE_RESOURCES_ROOT "/textures/texture1.bmp", &width, &height, &channels, 4);
     assert(textureData != nullptr);
     stbi_image_free(textureData);
   }
-  
 }
 
 App::~App()
@@ -247,10 +233,7 @@ void App::drawFrame()
 
       {
         etna::RenderTargetState state{
-          currentCmdBuf,
-          {{}, {resolution.x, resolution.y}},
-          {{backbuffer, backbufferView}},
-          {}};
+          currentCmdBuf, {{}, {resolution.x, resolution.y}}, {{backbuffer, backbufferView}}, {}};
 
         auto shaderInfo = etna::get_shader_program("local_shadertoy2");
 
