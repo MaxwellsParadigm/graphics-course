@@ -5,10 +5,6 @@
 #include <etna/ComputePipeline.hpp>
 #include <etna/Image.hpp>
 #include <etna/Sampler.hpp>
-
-#include <etna/Buffer.hpp>
-#include "shaders/UniformParams.h"
-
 #include <chrono>
 
 
@@ -37,12 +33,6 @@ private:
   std::unique_ptr<etna::Window> vkWindow;
   std::unique_ptr<etna::PerFrameCmdMgr> commandManager;
 
-  UniformParams uniformParams;
-  static const uint32_t numFramesInFlight = 3;
-  std::array<std::optional<etna::GpuSharedResource<etna::Buffer>>, numFramesInFlight>
-  gpuSharedResource;
-  uint32_t frameCount = 0;
-
   etna::Image generatedTextureImage;
   etna::Image loadedTextureImage1;
 
@@ -54,5 +44,15 @@ private:
   std::chrono::time_point<std::chrono::system_clock> start_time = std::chrono::system_clock::now();
   glm::vec2 mouse_pos;
 
+  std::vector<etna::Buffer> constantsBuffers;
+  int current_frame;
+
   bool is_textures_loaded = false;
+
+  struct PushConstants
+  {
+    float time;
+    glm::vec2 resolution;
+    glm::vec2 mouse_pos;
+  };
 };
