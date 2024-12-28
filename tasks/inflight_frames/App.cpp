@@ -147,8 +147,6 @@ App::App()
 
     stbi_image_free(textureData);
   }
-
-  mouse_pos = glm::vec2(resolution / 2u);
 }
 
 App::~App()
