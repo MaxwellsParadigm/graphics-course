@@ -7,10 +7,11 @@ layout(binding = 0) uniform sampler2D iChannel0;
 
 layout(binding = 1) uniform sampler2D iChannel1;
 
-layout(push_constant) uniform PushConstants
+layout(binding = 2) uniform PushConstants
 {
   float iTime;
   vec2 iResolution;
+  vec2 mouse_pos;
 }
 params;
 
