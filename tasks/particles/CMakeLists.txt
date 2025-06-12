@@ -1,0 +1,17 @@
+add_executable(particles
+  main.cpp
+  App.cpp
+  Renderer.cpp
+  WorldRenderer.cpp
+  ParticleSystem.cpp
+)
+
+target_link_libraries(particles
+  PRIVATE glfw etna glm::glm wsi gui scene render_utils)
+
+target_add_shaders(particles
+  shaders/static_mesh.frag
+  shaders/static_mesh.vert
+  shaders/particle.frag
+  shaders/particle.vert
+)
