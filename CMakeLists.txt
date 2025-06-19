@@ -31,6 +31,6 @@ endif()
 include("cmake/thirdparty.cmake")
 include("cmake/shaders.cmake")
 
+
 add_subdirectory(common)
-add_subdirectory(samples)
 add_subdirectory(tasks)
