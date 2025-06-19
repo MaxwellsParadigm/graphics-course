@@ -1,56 +1,66 @@
 #pragma once
 
 #include <filesystem>
-
+#include <optional>
+#include <cinttypes>
 #include <glm/glm.hpp>
 #include <tiny_gltf.h>
-#include <etna/Buffer.hpp>
 #include <etna/BlockingTransferHelper.hpp>
+#include <vector>
+#include <array>
+#include <cstdint>
 #include <etna/VertexInput.hpp>
+#include <etna/Buffer.hpp>
+#include <etna/Image.hpp>
 
-
-// A single render element (relem) corresponds to a single draw call
-// of a certain pipeline with specific bindings (including material data)
-struct RenderElement
+struct Material
 {
-  std::uint32_t vertexOffset;
-  std::uint32_t indexOffset;
-  std::uint32_t indexCount;
-  // Not implemented!
-  // Material* material;
+  uint32_t albedoIndex = static_cast<const uint32_t>(-1);
+  glm::vec4 albedo = {1.0, 1.0, 1.0, 1.0};
+  uint32_t normalIndex = static_cast<const uint32_t>(-1);
+  float normal = 1.0;
 };
 
-// A mesh is a collection of relems. A scene may have the same mesh
-// located in several different places, so a scene consists of **instances**,
-// not meshes.
-struct Mesh
+struct Element
 {
-  std::uint32_t firstRelem;
-  std::uint32_t relemCount;
+  std::uint32_t vertexOffset;
+  std::uint32_t vertexCount;
+  std::uint32_t indexOffset;
+  std::uint32_t indexCount;
+  Material material = {};
+};
+
+struct PositionedElement
+{
+  Element element;
+  std::uint32_t matrixPos;
+};
+
+struct Vertex
+{
+  glm::vec4 positionAndNormal;
+  glm::vec4 texCoordAndTangentAndPadding;
+};
+
+struct Texture
+{
+  etna::Image image;
+};
+
+struct SceneData
+{
+  etna::Buffer vertexData;
+  etna::Buffer indexData;
+  std::vector<etna::Image> textures;
+  std::vector<PositionedElement> p_elements;
+  std::vector<glm::mat4> transforms;
+  etna::VertexByteStreamFormatDescription vertexDesc;
 };
 
 class SceneManager
 {
 public:
-  SceneManager();
-
-  void selectScene(std::filesystem::path path);
-
-  // Every instance is a mesh drawn with a certain transform
-  // NOTE: maybe you can pass some additional data through unused matrix entries?
-  std::span<const glm::mat4x4> getInstanceMatrices() { return instanceMatrices; }
-  std::span<const std::uint32_t> getInstanceMeshes() { return instanceMeshes; }
-
-  // Every mesh is a collection of relems
-  std::span<const Mesh> getMeshes() { return meshes; }
-
-  // Every relem is a single draw call
-  std::span<const RenderElement> getRenderElements() { return renderElements; }
-
-  vk::Buffer getVertexBuffer() { return unifiedVbuf.get(); }
-  vk::Buffer getIndexBuffer() { return unifiedIbuf.get(); }
-
-  etna::VertexByteStreamFormatDescription getVertexFormatDescription();
+  std::optional<SceneData> selectScene(std::filesystem::path path);
 
 private:
   std::optional<tinygltf::Model> loadModel(std::filesystem::path path);
@@ -63,36 +73,38 @@ private:
 
   ProcessedInstances processInstances(const tinygltf::Model& model) const;
 
-  struct Vertex
+  struct Mesh
   {
-    // First 3 floats are position, 4th float is a packed normal
-    glm::vec4 positionAndNormal;
-    // First 2 floats are tex coords, 3rd is a packed tangent, 4th is padding
-    glm::vec4 texCoordAndTangentAndPadding;
+    std::uint32_t firstRelem;
+    std::uint32_t relemCount;
   };
-
-  static_assert(sizeof(Vertex) == sizeof(float) * 8);
 
   struct ProcessedMeshes
   {
-    std::vector<Vertex> vertices;
-    std::vector<std::uint32_t> indices;
-    std::vector<RenderElement> relems;
+    std::vector<Element> relems;
     std::vector<Mesh> meshes;
   };
+
   ProcessedMeshes processMeshes(const tinygltf::Model& model) const;
-  void uploadData(std::span<const Vertex> vertices, std::span<const std::uint32_t>);
+
+  std::vector<PositionedElement> positioned_elements;
+
+  std::vector<PositionedElement> processGroups(
+    const std::vector<uint32_t>& instMeshes,
+    const std::vector<Mesh>& meshes,
+    const std::vector<Element>& relems);
+
+  struct GpuData
+  {
+    etna::Buffer vertexData;
+    etna::Buffer indexData;
+    std::vector<etna::Image> textures;
+  };
+  GpuData uploadGpuData(const tinygltf::Model& model) const;
+
+  etna::VertexByteStreamFormatDescription getVertexFormatDescription() const;
+
 
 private:
   tinygltf::TinyGLTF loader;
-  std::unique_ptr<etna::OneShotCmdMgr> oneShotCommands;
-  etna::BlockingTransferHelper transferHelper;
-
-  std::vector<RenderElement> renderElements;
-  std::vector<Mesh> meshes;
-  std::vector<glm::mat4x4> instanceMatrices;
-  std::vector<std::uint32_t> instanceMeshes;
-
-  etna::Buffer unifiedVbuf;
-  etna::Buffer unifiedIbuf;
 };

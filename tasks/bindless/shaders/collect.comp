@@ -1,0 +1,22 @@
+#version 450
+#extension GL_GOOGLE_include_directive : require
+
+layout(local_size_x = 32) in;
+
+#include "bind.h"
+
+layout(binding = 0, std430) restrict buffer collect_buf
+{
+  Indirect comms[];
+};
+
+layout(push_constant) uniform collect_pc
+{
+  mat4 matrixVfW;
+};
+
+void main()
+{
+  uint ind = gl_GlobalInvocationID.x;
+  comms[ind].command.instanceCount = 1;
+}
